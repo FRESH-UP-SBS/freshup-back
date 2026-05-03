@@ -12,8 +12,10 @@ import lombok.*;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq") // sequence 전략 사용
+    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1) // 시퀀스 설정, allocationSize는 1로
+                                                                                         // 설정하여 시퀀스 번호가 1씩 증가하도록 함
+    @Column(name = "id") //
     private Long id;
 
     @Column(nullable = false)
@@ -33,11 +35,12 @@ public class User {
     private Role role;
 
     public enum Role {
-        ADMIN, MANAGER, USER
+        ADMIN, USER
     }
 
     public User updateNickname(String nickname) {
         this.nickname = nickname;
         return this;
     }
+
 }

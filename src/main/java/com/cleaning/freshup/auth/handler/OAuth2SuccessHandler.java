@@ -43,8 +43,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String providerId = String.valueOf(oAuth2User.getAttribute("id"));
         String token = jwtTokenProvider.generateToken(providerId);
 
+        // 쿠키 생성
+        Cookie cookie = new Cookie("accessToken", token);
+        cookie.setHttpOnly(true); // JS에서 접근 불가 (XSS 방어)
+        cookie.setSecure(false); // HTTPS에서만 전송
+        cookie.setPath("/"); // 모든 경로에서 유효
+        cookie.setMaxAge(3600); // 유효 시간 (1시간)
+        response.addCookie(cookie);
+
         // 프론트엔드로 토큰을 쿼리파라미터로 전달
         getRedirectStrategy().sendRedirect(request, response,
-                "http://localhost:3000/auth/callback?token=" + token);
+                "http://localhost:3000/auth/callback");
     }
 }
