@@ -24,8 +24,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         KakaoOAuth2UserInfo info = new KakaoOAuth2UserInfo(oAuth2User.getAttributes());
 
         User user = userRepository.findByProviderAndProviderId("kakao", info.getId())
-                .map(u -> u.updateNickname(info.getNickname()))
-                .orElseGet(() -> userRepository.save(User.builder()
+                .map(u -> u.updateNickname(info.getNickname())) // 기존 사용자가 로그인할 때마다 닉네임 업데이트
+                .orElseGet(() -> userRepository.save(User.builder() // 새로운 사용자는 받은 정보 저장(save는 JpaRepository에서 상속 받은 함수)
                         .email(info.getEmail() != null ? info.getEmail() : "")
                         .nickname(info.getNickname())
                         .provider("kakao")
