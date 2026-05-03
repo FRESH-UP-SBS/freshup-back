@@ -3,6 +3,8 @@ package com.cleaning.freshup.config;
 import com.cleaning.freshup.auth.handler.*;
 import com.cleaning.freshup.auth.jwt.*;
 import com.cleaning.freshup.auth.oauth.CustomOAuth2UserService;
+import com.cleaning.freshup.domain.user.repository.HttpCookieOAuth2AuthorizationRequestRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,56 +12,76 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-        private final CustomOAuth2UserService customOAuth2UserService; // OAuth2 사용자 정보를 처리하는 서비스
-        private final OAuth2SuccessHandler oAuth2SuccessHandler; // OAuth2 로그인 성공 시 처리하는 핸들러
-        private final JwtAuthenticationFilter jwtAuthenticationFilter; // JWT 인증을 처리하는 필터
+        private final CustomOAuth2UserService customOAuth2UserService;
+        private final OAuth2SuccessHandler oAuth2SuccessHandler;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-<<<<<<< HEAD
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/public/**", "/login/**", "/oauth2/**", "/**").permitAll()
-                        .anyRequest().authenticated())
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // 1. 위에서 만든 레포지토리를 주입받습니다.
+        private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
-        return http.build();
-    }
-=======
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
-                                .csrf(csrf -> csrf
-                                                /**
-                                                 * CSRF 보호를 활성화하고, 쿠키 기반 CSRF 토큰 저장소를 사용하도록 설정. HttpOnly 속성은 false로 설정하여
-                                                 * 클라이언트 측에서
-                                                 */
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                                .csrf(csrf -> csrf.disable()) // JWT 환경이므로 보통 disable 합니다.
                                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/", "/login/**", "/oauth2/**")
-                                                .permitAll()
+                                                .requestMatchers("/", "/login/**", "/oauth2/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .oauth2Login(oauth -> oauth
+                                                .authorizationEndpoint(authorization -> authorization
+                                                                .baseUri("/oauth2/authorization")
+                                                                // 2. 여기에 쿠키 레포지토리를 설정합니다!
+                                                                .authorizationRequestRepository(
+                                                                                httpCookieOAuth2AuthorizationRequestRepository))
                                                 .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
                                                 .successHandler(oAuth2SuccessHandler))
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-                /**
-                 * JWT 인증 필터를 UsernamePasswordAuthenticationFilter 전에 추가
-                 */
+
                 return http.build();
         }
->>>>>>> bd84a0e14855bc6c56862079b4dad79cdf34a091
 }
+
+// @Bean
+// public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+// http
+// // 1. CSRF는 필요에 따라 disable하거나 설정을 유지하되,
+// // OAuth2 콜백 경로는 확실히 permitAll 되어야 함
+// .csrf(csrf -> csrf.disable())
+
+// // 2. 세션은 STATELESS로 유지 (JWT 서버니까)
+// .sessionManagement(s ->
+// s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+// .authorizeHttpRequests(auth -> auth
+// .requestMatchers("/", "/login/**", "/oauth2/**", "/favicon.ico")
+// .permitAll()
+// .anyRequest().authenticated())
+
+// // 3. OAuth2 설정 보완
+// .oauth2Login(oauth -> oauth
+// .authorizationEndpoint(a -> a
+// // 세션 대신 쿠키에 인증 요청 정보를 저장하도록 설정 (KOE237 해결책)
+// .authorizationRequestRepository(
+// cookieAuthorizationRequestRepository()))
+// .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+// .successHandler(oAuth2SuccessHandler))
+
+// .addFilterBefore(jwtAuthenticationFilter,
+// UsernamePasswordAuthenticationFilter.class);
+
+// return http.build();
+// }
+
+// // 쿠키 저장소 빈 등록
+// @Bean
+// public HttpCookieOAuth2AuthorizationRequestRepository
+// cookieAuthorizationRequestRepository() {
+// return new HttpCookieOAuth2AuthorizationRequestRepository();
+// }
+// }

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "tb_user")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -13,22 +13,15 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq") // sequence 전략 사용
-    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1) // 시퀀스 설정, allocationSize는 1로
-                                                                                         // 설정하여 시퀀스 번호가 1씩 증가하도록 함
-    @Column(name = "id") //
-    private Long id;
+    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1) // 시퀀스 생성 설정
+    @Column(name = "user_seq")
+    private Long user_seq;
 
     @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
-    private String nickname;
-
-    @Column(nullable = false)
-    private String provider; // "kakao"
-
-    @Column(nullable = false)
-    private String providerId;
+    private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -38,8 +31,8 @@ public class User {
         ADMIN, USER
     }
 
-    public User updateNickname(String nickname) {
-        this.nickname = nickname;
+    public User updateName(String name) {
+        this.name = name;
         return this;
     }
 
