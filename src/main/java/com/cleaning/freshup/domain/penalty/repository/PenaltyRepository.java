@@ -15,4 +15,19 @@ public interface PenaltyRepository extends JpaRepository<Penalty, Long> {
             ORDER BY p.id ASC
             """)
     List<Penalty> findAllWithUser();
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Penalty p
+            WHERE p.user.id = :userId
+            """)
+    int sumAmountByUserId(Long userId);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Penalty p
+            WHERE p.user.id = :userId
+            AND p.adjustmentYn = 'N'
+            """)
+    int sumUnpaidAmountByUserId(Long userId);
 }
