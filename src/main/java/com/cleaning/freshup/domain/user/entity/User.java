@@ -13,11 +13,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(
-            name = "user_seq",
-            sequenceName = "USER_SEQ",
-            allocationSize = 1
-    )
+    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1)
     @Column(name = "USER_SEQ")
     private Long id;
 
@@ -39,4 +35,18 @@ public class User {
         this.name = name;
         return this;
     }
+
+    // Refresh Token 필드 추가
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
+    public void updateRefreshToken(String newToken) {
+        this.refreshToken = newToken;
+    }
+
+    // 로그아웃 시 토큰 제거
+    public void destroyRefreshToken() {
+        this.refreshToken = null;
+    }
+
 }

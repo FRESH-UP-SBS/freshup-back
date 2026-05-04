@@ -1,6 +1,8 @@
 package com.cleaning.freshup.auth.handler;
 
 import com.cleaning.freshup.auth.jwt.JwtTokenProvider;
+import com.cleaning.freshup.auth.jwt.JwtTokenService;
+
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 
@@ -16,26 +18,36 @@ import java.io.IOException;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenService tokenService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        Long id = oAuth2User.getAttribute("id");
-        String providerId = id.toString();
-        String token = jwtTokenProvider.generateToken(providerId);
+        String providerId = oAuth2User.getAttribute("id").toString();
 
-        // 쿠키 생성
-        Cookie cookie = new Cookie("accessToken", token);
-        cookie.setHttpOnly(true); // JS에서 접근 불가 (XSS 방어)
-        cookie.setSecure(false); // HTTPS에서만 전송 -> true
-        cookie.setPath("/"); // 모든 경로에서 유효
-        cookie.setMaxAge(3600); // 유효 시간 (1시간)
-        response.addCookie(cookie);
+        // 1. 두 종류의 토큰 생성
+        String accessToken = jwtTokenProvider.generateAccessToken(providerId);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(providerId);
 
-        // 프론트엔드로 토큰을 쿼리파라미터로 전달
-        getRedirectStrategy().sendRedirect(request, response,
-                "http://localhost:3000/calendar");
+        // 2. Access Token 쿠키 (짧은 수명)
+        Cookie accessCookie = new Cookie("accessToken", accessToken);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(3600); // 1시간
+        response.addCookie(accessCookie);
+
+        // 3. Refresh Token 쿠키 (긴 수명)
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/api/auth/reissue"); // `/api/auth/reissue`로 이동할 경우에만 (재발급 요청시에만) 서버로 전송되도록 제한(보안 강화)
+        refreshCookie.setMaxAge(60 * 60 * 24 * 7); // 7일
+        response.addCookie(refreshCookie);
+
+        // 4. Refresh Token은 DB에도 저장해야 함 (검증용)
+        tokenService.saveRefreshToken(providerId, refreshToken);
+
+        getRedirectStrategy().sendRedirect(request, response, "http://localhost:3000/calendar");
     }
 }
