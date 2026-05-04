@@ -55,7 +55,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
                 User user = socialAccount.getUser();
 
-                // 닉네임 업데이트 (선택)
+                // 닉네임 업데이트
                 user.updateName(info.getNickname());
 
                 return new DefaultOAuth2User(
