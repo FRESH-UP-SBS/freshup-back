@@ -53,18 +53,6 @@ public class JwtTokenProvider {
         return createToken(providerId, refreshTokenExpiration, "refresh");
     }
 
-    /**
-     * 이전 방식
-     */
-    // public String generateToken(String providerId) {
-    // return Jwts.builder()
-    // .subject(providerId)
-    // .issuedAt(new Date())
-    // .expiration(new Date(System.currentTimeMillis() + expiration))
-    // .signWith(key)
-    // .compact();
-    // }
-
     public String getProviderId(String token) {
         return Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) key)

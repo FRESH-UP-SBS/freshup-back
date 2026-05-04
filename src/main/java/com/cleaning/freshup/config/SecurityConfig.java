@@ -7,7 +7,7 @@ import com.cleaning.freshup.domain.user.repository.HttpCookieOAuth2Authorization
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
@@ -28,7 +28,6 @@ public class SecurityConfig {
         private final CustomOAuth2UserService customOAuth2UserService;
         private final OAuth2SuccessHandler oAuth2SuccessHandler;
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
         private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
         @Bean
@@ -43,9 +42,9 @@ public class SecurityConfig {
                                                 .requestMatchers(
                                                                 "/",
                                                                 "/login/**",
-                                                                "/oauth2/**")
+                                                                "/oauth2/**",
+                                                                "/api/auth/reissue")
                                                 .permitAll()
-
                                                 .requestMatchers(
                                                                 "/api/schedules/**")
                                                 .permitAll()

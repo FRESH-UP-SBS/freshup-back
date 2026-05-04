@@ -36,4 +36,17 @@ public class User {
         return this;
     }
 
+    // Refresh Token 필드 추가
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
+    public void updateRefreshToken(String newToken) {
+        this.refreshToken = newToken;
+    }
+
+    // 로그아웃 시 토큰 제거
+    public void destroyRefreshToken() {
+        this.refreshToken = null;
+    }
+
 }
