@@ -22,9 +22,12 @@ public class SecurityConfig {
         private final OAuth2SuccessHandler oAuth2SuccessHandler;
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+<<<<<<< Updated upstream
         // 1. 위에서 만든 레포지토리를 주입받습니다.
         private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
+=======
+>>>>>>> Stashed changes
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
@@ -45,6 +48,7 @@ public class SecurityConfig {
 
                 return http.build();
         }
+<<<<<<< Updated upstream
 }
 
 // @Bean
@@ -85,3 +89,6 @@ public class SecurityConfig {
 // return new HttpCookieOAuth2AuthorizationRequestRepository();
 // }
 // }
+=======
+}
+>>>>>>> Stashed changes
