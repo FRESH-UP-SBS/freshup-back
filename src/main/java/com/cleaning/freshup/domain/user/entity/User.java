@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "tb_user")
+@Table(name = "TB_USER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -12,19 +12,23 @@ import lombok.*;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq") // sequence 전략 사용
-    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1) // 시퀀스 생성 설정
-    @Column(name = "user_seq")
-    private Long user_seq;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
+    @SequenceGenerator(
+            name = "user_seq",
+            sequenceName = "USER_SEQ",
+            allocationSize = 1
+    )
+    @Column(name = "USER_SEQ")
+    private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "EMAIL", nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "NAME", nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "ROLE", nullable = false)
     private Role role;
 
     public enum Role {
@@ -35,5 +39,4 @@ public class User {
         this.name = name;
         return this;
     }
-
 }
