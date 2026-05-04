@@ -42,7 +42,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/login/**",
-                                "/oauth2/**"
+                                "/oauth2/**",
+                                "/api/schedules/**",
+                                "/api/works/**",
+                                "/api/penalties/**",
+                                "/api/users/me"
                         ).permitAll()
 
                         .requestMatchers(
