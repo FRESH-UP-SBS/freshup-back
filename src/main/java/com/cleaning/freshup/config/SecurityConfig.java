@@ -36,7 +36,7 @@ public class SecurityConfig {
                                 .oauth2Login(oauth -> oauth
                                                 .authorizationEndpoint(authorization -> authorization
                                                                 .baseUri("/oauth2/authorization")
-                                                                // 2. 여기에 쿠키 레포지토리를 설정합니다!
+                                                                // 2. 여기에 쿠키 레포지토리를 설정한다.
                                                                 .authorizationRequestRepository(
                                                                                 httpCookieOAuth2AuthorizationRequestRepository))
                                                 .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
