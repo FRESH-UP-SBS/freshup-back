@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/api/schedules/**",
                                 "/api/works/**",
                                 "/api/penalties/**",
-                                "/api/users/me"
+                                "/api/users/me",
+                                "/api/user-stats/**"
                         ).permitAll()
 
                         .requestMatchers(
