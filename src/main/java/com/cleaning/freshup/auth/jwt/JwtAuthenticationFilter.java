@@ -18,15 +18,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-            HttpServletResponse response,
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
+
         String token = resolveToken(request);
 
         if (token != null && jwtTokenProvider.validate(token)) {
-            String providerId = jwtTokenProvider.getProviderId(token);
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(providerId, null,
+            // 토큰에서 email 추출 (Provider의 메서드 이름이 getEmail이라고 가정)
+            String email = jwtTokenProvider.getEmail(token);
+
+            // SecurityContext에 email을 Principal로 설정
+            // Authorities(권한)가 필요하다면 Collections.emptyList() 대신 실제 권한을 넣어주세요.
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    email,
+                    null,
                     Collections.emptyList());
+
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
@@ -34,9 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                // 본인이 설정한 쿠키 이름 (예: "accessToken") 확인
+                if ("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
     }
