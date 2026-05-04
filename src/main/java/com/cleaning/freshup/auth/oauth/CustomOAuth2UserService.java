@@ -26,7 +26,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         @Transactional
         public OAuth2User loadUser(OAuth2UserRequest request) {
                 OAuth2User oAuth2User = super.loadUser(request);
-                System.out.println("oAuth2User.getAttributes() >>>>>  " + oAuth2User.getAttributes());
 
                 KakaoOAuth2UserInfo info = new KakaoOAuth2UserInfo(oAuth2User.getAttributes());
 
@@ -34,21 +33,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 Long id = (Long) oAuth2User.getAttribute("id");
                 String providerUserId = id.toString();
 
-                // String providerUserId = String.valueOf(info.getId()); // 🔥 중요 (Long →
-                // String)
-
-                // 1️⃣ 소셜 계정 조회
+                // 1. 소셜 계정 조회
                 SocialAccount socialAccount = socialAccountRepository
                                 .findByProviderAndProviderUserId(provider, providerUserId)
                                 .orElseGet(() -> {
-                                        // 2️⃣ 없으면 User 생성
+                                        // 2. 없으면 User 생성
                                         User newUser = userRepository.save(User.builder()
                                                         .email(info.getEmail() != null ? info.getEmail() : "")
                                                         .name(info.getNickname())
                                                         .role(User.Role.USER)
                                                         .build());
 
-                                        // 3️⃣ SocialAccount 생성
+                                        // 3. SocialAccount 생성
                                         return socialAccountRepository.save(
                                                         SocialAccount.builder()
                                                                         .provider(provider)
