@@ -12,6 +12,7 @@ public class WorkResponseDto {
 
     private Long id;
     private String workName;
+    private List<Long> memberIds;
     private List<String> memberNames;
 
     public static WorkResponseDto from(Work work) {

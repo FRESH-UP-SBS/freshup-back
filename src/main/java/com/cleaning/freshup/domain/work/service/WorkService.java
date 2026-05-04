@@ -77,14 +77,20 @@ public class WorkService {
     }
 
     private WorkResponseDto toResponseDto(Work work) {
-        List<String> memberNames = cleaningRoleRepository.findByWorkId(work.getId())
-                .stream()
+        List<CleaningRole> cleaningRoles = cleaningRoleRepository.findByWorkId(work.getId());
+
+        List<Long> memberIds = cleaningRoles.stream()
+                .map(cleaningRole -> cleaningRole.getUser().getId())
+                .toList();
+
+        List<String> memberNames = cleaningRoles.stream()
                 .map(cleaningRole -> cleaningRole.getUser().getName())
                 .toList();
 
         return WorkResponseDto.builder()
                 .id(work.getId())
                 .workName(work.getWorkName())
+                .memberIds(memberIds)
                 .memberNames(memberNames)
                 .build();
     }

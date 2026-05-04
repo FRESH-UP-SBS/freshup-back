@@ -1,6 +1,7 @@
 package com.cleaning.freshup.domain.user.controller;
 
 import com.cleaning.freshup.domain.user.dto.CurrentUserResponseDto;
+import com.cleaning.freshup.domain.user.dto.UserOptionResponseDto;
 import com.cleaning.freshup.domain.user.entity.User;
 import com.cleaning.freshup.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,12 +10,22 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserRepository userRepository;
+
+    @GetMapping
+    public List<UserOptionResponseDto> getUsers() {
+        return userRepository.findAllByOrderByIdAsc()
+                .stream()
+                .map(UserOptionResponseDto::from)
+                .toList();
+    }
 
     @GetMapping("/me")
     public CurrentUserResponseDto getCurrentUser(Authentication authentication) {
