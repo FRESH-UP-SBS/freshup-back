@@ -22,4 +22,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
     );
+
+    @Query("""
+        SELECT COUNT(s)
+        FROM Schedule s
+        WHERE s.date BETWEEN :start AND :end
+        AND s.work.id IN (
+            SELECT cr.work.id
+            FROM CleaningRole cr
+            WHERE cr.user.id = :userId
+        )
+        """)
+    long countSchedulesByAssignedWorkAndWeek(
+            @Param("userId") Long userId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end
+    );
 }

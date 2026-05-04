@@ -43,8 +43,14 @@ public class SecurityConfig {
                                                                 "/",
                                                                 "/login/**",
                                                                 "/oauth2/**",
+                                                                "/api/schedules/**",
+                                                                "/api/works/**",
+                                                                "/api/penalties/**",
+                                                                "/api/users/me",
+                                                                "/api/user-stats/**",
                                                                 "/api/auth/reissue")
                                                 .permitAll()
+
                                                 .requestMatchers(
                                                                 "/api/schedules/**")
                                                 .permitAll()
