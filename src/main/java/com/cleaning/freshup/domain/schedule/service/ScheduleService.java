@@ -1,7 +1,6 @@
 package com.cleaning.freshup.domain.schedule.service;
 
 import com.cleaning.freshup.domain.schedule.dto.ScheduleResponseDto;
-import com.cleaning.freshup.domain.schedule.entity.Schedule;
 import com.cleaning.freshup.domain.schedule.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,7 @@ public class ScheduleService {
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
 
-        return scheduleRepository.findByDateBetween(start, end)
+        return scheduleRepository.findSchedulesByMonth(start, end)
                 .stream()
                 .map(ScheduleResponseDto::from)
                 .toList();

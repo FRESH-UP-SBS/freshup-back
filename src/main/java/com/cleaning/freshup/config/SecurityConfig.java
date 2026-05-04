@@ -22,6 +22,7 @@ public class SecurityConfig {
         private final OAuth2SuccessHandler oAuth2SuccessHandler;
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+<<<<<<< HEAD
         // 1. 위에서 만든 레포지토리를 주입받습니다.
         private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
@@ -42,6 +43,20 @@ public class SecurityConfig {
                                                 .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
                                                 .successHandler(oAuth2SuccessHandler))
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+=======
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/public/**", "/login/**", "/oauth2/**", "/**").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+>>>>>>> ed94defd35028c23d5323a6bbc4c363eb635b86f
 
                 return http.build();
         }
