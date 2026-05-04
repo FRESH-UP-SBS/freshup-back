@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,7 +20,7 @@ import java.time.LocalDate;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "TB_SCHEDULE")
 public class Schedule {
 
@@ -43,4 +44,16 @@ public class Schedule {
 
     @Column(name = "EVENT_DATE", nullable = false)
     private LocalDate date;
+
+    public Schedule(User user, Work work, LocalDate date) {
+        this.user = user;
+        this.work = work;
+        this.date = date;
+    }
+
+    public void update(User user, Work work, LocalDate date) {
+        this.user = user;
+        this.work = work;
+        this.date = date;
+    }
 }
