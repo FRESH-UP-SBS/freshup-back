@@ -21,14 +21,10 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final SocialAccountRepository socialAccountRepository;
     private final UserRepository userRepository;
 
-    // 리프레시 토큰으로 accessToken 재발급 엔드포인트
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
-        // 1. 쿠키에서 refreshToken 찾기
-        // refreshToken으로 accessToken을 재발급한다.
         String refreshToken = null;
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -39,46 +35,43 @@ public class AuthController {
             }
         }
 
-        // 2. 토큰 검증 (유효성 및 DB 대조)
         if (refreshToken != null && jwtTokenProvider.validate(refreshToken)) {
-            String providerId = jwtTokenProvider.getProviderId(refreshToken); // token에 담긴 providerId 추출
+            // 1) 토큰에서 email 추출
+            String email = jwtTokenProvider.getEmail(refreshToken);
 
-            // 1) SocialAccount를 통해 providerId에 해당하는 사용자의 이메일이나 고유 식별자를 가져옵니다.
-            SocialAccount socialAccount = socialAccountRepository.findByProviderUserId(providerId)
+            // 2) 이메일로 사용자 조회
+            User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-            User user = socialAccount.getUser();
-
-            // 2) DB에 저장된 refreshToken과 클라이언트가 보낸 토큰이 일치하는지 대조
+            // 3) DB의 리프레시 토큰과 비교
             if (!refreshToken.equals(user.getRefreshToken())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Refresh Token");
             }
 
-            // 3) 새로운 AccessToken 생성
-            String newAccessToken = jwtTokenProvider.generateAccessToken(providerId);
-            String newRefreshToken = jwtTokenProvider.generateRefreshToken(providerId);
+            // 4) 새로운 토큰 생성 (Email 기반)
+            String newAccessToken = jwtTokenProvider.generateAccessToken(email, user.getId());
+            String newRefreshToken = jwtTokenProvider.generateRefreshToken(email, user.getId());
 
-            // 4) 새 쿠키 설정 및 응답
+            // 4-1) Access Token 쿠키 설정 (기존과 동일)
             Cookie accessCookie = new Cookie("accessToken", newAccessToken);
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
-            accessCookie.setMaxAge(3600); // 1시간
+            accessCookie.setMaxAge(3600);
             response.addCookie(accessCookie);
 
-            // 4) 새 쿠키 설정 및 응답
+            // 4-2) Refresh Token 쿠키 설정
             Cookie refreshCookie = new Cookie("refreshToken", newRefreshToken);
             refreshCookie.setHttpOnly(true);
-            refreshCookie.setPath("/api/auth/reissue"); // `/api/auth/reissue`로 이동할 경우에만 (재발급 요청시에만) 서버로 전송되도록 제한(보안 강화)
-            refreshCookie.setMaxAge(604800); // 7일
+            refreshCookie.setPath("/api/auth/reissue");
+            refreshCookie.setMaxAge(60 * 60 * 24 * 7);
             response.addCookie(refreshCookie);
 
-            // 5) DB에 저장된 refreshToken도 갱신
+            // 5) DB 갱신
             user.updateRefreshToken(newRefreshToken);
             userRepository.save(user);
 
             return ResponseEntity.ok().body("Token reissued successfully");
         }
-
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Refresh Token");
     }
 }
