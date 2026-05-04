@@ -12,13 +12,15 @@ public class ScheduleResponseDto {
 
     private Long id;
     private LocalDate date;
-    private String content;
+    private String taskName;
+    private String memberName;
 
     public static ScheduleResponseDto from(Schedule schedule) {
         return ScheduleResponseDto.builder()
                 .id(schedule.getId())
                 .date(schedule.getDate())
-                .content(schedule.getContent())
+                .taskName(schedule.getWork().getWorkName())
+                .memberName(schedule.getUser().getName())
                 .build();
     }
 }
