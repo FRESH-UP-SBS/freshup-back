@@ -3,6 +3,8 @@ package com.cleaning.freshup.config;
 import com.cleaning.freshup.auth.handler.*;
 import com.cleaning.freshup.auth.jwt.*;
 import com.cleaning.freshup.auth.oauth.CustomOAuth2UserService;
+import com.cleaning.freshup.domain.user.repository.HttpCookieOAuth2AuthorizationRequestRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,16 +12,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-        private final CustomOAuth2UserService customOAuth2UserService; // OAuth2 사용자 정보를 처리하는 서비스
-        private final OAuth2SuccessHandler oAuth2SuccessHandler; // OAuth2 로그인 성공 시 처리하는 핸들러
-        private final JwtAuthenticationFilter jwtAuthenticationFilter; // JWT 인증을 처리하는 필터
+        private final CustomOAuth2UserService customOAuth2UserService;
+        private final OAuth2SuccessHandler oAuth2SuccessHandler;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,6 +35,6 @@ public class SecurityConfig {
                         .successHandler(oAuth2SuccessHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 }

@@ -21,26 +21,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException {
 
-        // String token = jwtTokenProvider.generateToken(authentication.getName());
-
-        // // 1. 쿠키 생성
-        // ResponseCookie cookie = ResponseCookie.from("accessToken", token)
-        // .httpOnly(true) // JS에서 접근 불가 (XSS 방어)
-        // .secure(true) // HTTPS에서만 전송
-        // .path("/") // 모든 경로에서 유효
-        // .maxAge(3600) // 유효 시간 (1시간)
-        // .sameSite("Lax") // CSRF 방어 정책
-        // .build();
-
-        // // 2. 응답 헤더에 추가
-        // response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-
-        // // 3. 프론트엔드로 리다이렉트
-        // response.sendRedirect("http://localhost:3000/main");
-
-        // 클로드 답변 -> 토큰 생성 -> 쿠키에 담아서 보내야됨 (수정 필요 !!!)
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String providerId = String.valueOf(oAuth2User.getAttribute("id"));
+        // String providerId = String.valueOf(oAuth2User.getAttribute("id"));
+        Long id = oAuth2User.getAttribute("id");
+        String providerId = id.toString();
         String token = jwtTokenProvider.generateToken(providerId);
 
         // 쿠키 생성
@@ -53,6 +37,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 프론트엔드로 토큰을 쿼리파라미터로 전달
         getRedirectStrategy().sendRedirect(request, response,
-                "http://localhost:3000/auth/callback");
+                "http://localhost:3000");
     }
 }
