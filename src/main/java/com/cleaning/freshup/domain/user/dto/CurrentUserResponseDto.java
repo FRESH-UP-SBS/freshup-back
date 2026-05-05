@@ -11,10 +11,11 @@ public class CurrentUserResponseDto {
     private Long id;
     private String name;
     private String role;
+    private Long userSeq;
 
     public static CurrentUserResponseDto from(User user) {
         return CurrentUserResponseDto.builder()
-                .id(user.getId())
+                .userSeq(user.getId())
                 .name(user.getName())
                 .role(user.getRole().name())
                 .build();
