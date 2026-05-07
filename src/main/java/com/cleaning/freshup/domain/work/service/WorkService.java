@@ -47,7 +47,13 @@ public class WorkService {
 
         work.updateWorkName(requestDto.getWorkName());
 
+        // 기존 담당자 먼저 DB에서 삭제
         cleaningRoleRepository.deleteByWorkId(workId);
+
+        // delete SQL이 먼저 DB에 반영되도록 강제 flush
+        cleaningRoleRepository.flush();
+
+        // 새 담당자 다시 저장
         saveCleaningRoles(work, requestDto.getMemberIds());
 
         return toResponseDto(work);
@@ -59,6 +65,8 @@ public class WorkService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 청소 업무입니다."));
 
         cleaningRoleRepository.deleteByWorkId(workId);
+        cleaningRoleRepository.flush();
+
         work.deleteWork();
     }
 
@@ -67,24 +75,35 @@ public class WorkService {
             return;
         }
 
-        for (Long memberId : memberIds) {
+        List<Long> distinctMemberIds = memberIds.stream()
+                .distinct()
+                .toList();
+
+        for (Long memberId : distinctMemberIds) {
             User user = userRepository.findById(memberId)
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
             CleaningRole cleaningRole = new CleaningRole(user, work);
+
             cleaningRoleRepository.save(cleaningRole);
         }
     }
 
     private WorkResponseDto toResponseDto(Work work) {
-        List<String> memberNames = cleaningRoleRepository.findByWorkId(work.getId())
-                .stream()
+        List<CleaningRole> cleaningRoles = cleaningRoleRepository.findByWorkId(work.getId());
+
+        List<Long> memberIds = cleaningRoles.stream()
+                .map(cleaningRole -> cleaningRole.getUser().getId())
+                .toList();
+
+        List<String> memberNames = cleaningRoles.stream()
                 .map(cleaningRole -> cleaningRole.getUser().getName())
                 .toList();
 
         return WorkResponseDto.builder()
                 .id(work.getId())
                 .workName(work.getWorkName())
+                .memberIds(memberIds)
                 .memberNames(memberNames)
                 .build();
     }

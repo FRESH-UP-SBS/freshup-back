@@ -7,7 +7,7 @@ import lombok.Getter;
 @Builder
 public class MyPageStatsResponseDto {
 
-    private Long userId;
+    private Long userSeq;
     private String name;
     private String role;
 
