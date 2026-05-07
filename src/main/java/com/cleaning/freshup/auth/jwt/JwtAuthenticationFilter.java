@@ -1,8 +1,13 @@
 package com.cleaning.freshup.auth.jwt;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -18,23 +23,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validate(token)) {
-            // 토큰에서 email 추출 (Provider의 메서드 이름이 getEmail이라고 가정)
-            String email = jwtTokenProvider.getEmail(token);
+        System.out.println("요청 URI = " + request.getRequestURI());
+        System.out.println("토큰 존재 여부 = " + (token != null));
 
-            // SecurityContext에 email을 Principal로 설정
-            // Authorities(권한)가 필요하다면 Collections.emptyList() 대신 실제 권한을 넣어주세요.
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    email,
-                    null,
-                    Collections.emptyList());
+        if (token != null) {
+            boolean valid = jwtTokenProvider.validate(token);
+            System.out.println("토큰 유효 여부 = " + valid);
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            if (valid) {
+                String email = jwtTokenProvider.getEmail(token);
+                System.out.println("JWT email = " + email);
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                Collections.emptyList()
+                        );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -50,6 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
+
         return null;
     }
 }

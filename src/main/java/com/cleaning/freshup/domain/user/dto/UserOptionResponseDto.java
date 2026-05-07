@@ -6,18 +6,15 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class CurrentUserResponseDto {
+public class UserOptionResponseDto {
 
     private Long id;
     private String name;
-    private String role;
-    private Long userSeq;
 
-    public static CurrentUserResponseDto from(User user) {
-        return CurrentUserResponseDto.builder()
-                .userSeq(user.getId())
+    public static UserOptionResponseDto from(User user) {
+        return UserOptionResponseDto.builder()
+                .id(user.getId())
                 .name(user.getName())
-                .role(user.getRole().name())
                 .build();
     }
 }

@@ -11,10 +11,12 @@ import java.util.List;
 
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.*;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -42,19 +44,9 @@ public class SecurityConfig {
                                                 .requestMatchers(
                                                                 "/",
                                                                 "/login/**",
-                                                                "/oauth2/**",
-                                                                "/api/schedules/**",
-                                                                "/api/works/**",
-                                                                "/api/penalties/**",
-                                                                "/api/users/me",
-                                                                "/api/user-stats/**",
-                                                                "/api/auth/reissue")
+                                                                "/oauth2/**"
+                                                )
                                                 .permitAll()
-
-                                                .requestMatchers(
-                                                                "/api/schedules/**")
-                                                .permitAll()
-
                                                 .anyRequest().authenticated())
                                 .oauth2Login(oauth -> oauth
                                                 .authorizationEndpoint(authorization -> authorization

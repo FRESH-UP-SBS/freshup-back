@@ -41,7 +41,7 @@ public class UserStatsService {
         int unpaidPenaltyAmount = penaltyRepository.sumUnpaidAmountByUserId(user.getId());
 
         return MyPageStatsResponseDto.builder()
-                .userId(user.getId())
+                .userSeq(user.getId())
                 .name(user.getName())
                 .role(user.getRole().name())
                 .weeklyCleanCount(weeklyCleanCount)
