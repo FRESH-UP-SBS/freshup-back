@@ -3,6 +3,9 @@ package com.cleaning.freshup.domain.penalty.controller;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyResponseDto;
 import com.cleaning.freshup.domain.penalty.service.PenaltyService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyRequestDto;
 
@@ -16,8 +19,8 @@ import java.util.List;
 // 즉, 이 클래스 안의 API들은 모두 /api/penalties 로 시작한다.
 //
 // 예:
-// GET  /api/penalties
-// PUT  /api/penalties/{penaltyId}
+// GET /api/penalties
+// PUT /api/penalties/{penaltyId}
 @RequestMapping("/api/penalties")
 
 // Lombok 어노테이션
@@ -42,14 +45,19 @@ public class PenaltyController {
     // 역할:
     // 벌금 목록을 조회한다.
     @GetMapping
-    public List<PenaltyResponseDto> getPenalties() {
+    public Page<PenaltyResponseDto> getPenalties(@RequestParam(required = false) List<Long> assignees,
+            @RequestParam(required = false) String paymentStatus,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            Pageable pageable) {
+        // 실제로 어떤 값이 들어오는지 확인
 
         // Service에게 벌금 목록 조회를 요청하고,
         // 그 결과를 그대로 클라이언트에게 반환한다.
         //
         // 반환 타입이 List<PenaltyResponseDto>이므로
         // 여러 개의 벌금 정보를 JSON 배열 형태로 응답한다.
-        return penaltyService.getPenalties();
+        return penaltyService.getPenalties(assignees, paymentStatus, startDate, endDate, pageable);
     }
 
     // PUT 요청을 처리한다.
@@ -73,12 +81,11 @@ public class PenaltyController {
             //
             // 예:
             // {
-            //   "amount": 5000
+            // "amount": 5000
             // }
             //
             // 이런 JSON 데이터가 requestDto에 담긴다.
-            @RequestBody PenaltyRequestDto requestDto
-    ) {
+            @RequestBody PenaltyRequestDto requestDto) {
 
         // Service에게 특정 벌금 정보 수정을 요청한다.
         //
@@ -87,5 +94,11 @@ public class PenaltyController {
         //
         // 수정된 결과를 PenaltyResponseDto 형태로 반환한다.
         return penaltyService.updatePenalty(penaltyId, requestDto);
+    }
+
+    // 패널티 정보 삭제 API
+    @DeleteMapping("/{penaltyId}")
+    public void deletePenalty(@PathVariable Long penaltyId) {
+        penaltyService.deletePenalty(penaltyId);
     }
 }

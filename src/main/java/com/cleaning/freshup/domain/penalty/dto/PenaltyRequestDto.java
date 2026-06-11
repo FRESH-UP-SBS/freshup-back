@@ -1,5 +1,11 @@
 package com.cleaning.freshup.domain.penalty.dto;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +24,7 @@ import lombok.NoArgsConstructor;
 // @RequestBody로 JSON 데이터를 객체로 변환할 때
 // 기본 생성자가 필요할 수 있다.
 @NoArgsConstructor
+@AllArgsConstructor
 public class PenaltyRequestDto {
 
     // 벌금 조정 여부를 나타내는 값이다.
@@ -28,4 +35,12 @@ public class PenaltyRequestDto {
     //
     // 실제 의미는 프로젝트에서 정한 규칙에 따라 사용된다.
     private String adjustmentYn;
+
+    private List<Long> assignees; // 담당자 ID 목록
+    private String paymentStatus; // 수납 여부 (ALL, Y, N)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate startDate; // 시작 날짜
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate endDate; // 종료 날짜
+
 }
