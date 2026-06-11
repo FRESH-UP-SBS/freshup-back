@@ -1,5 +1,6 @@
 package com.cleaning.freshup.domain.penalty.controller;
 
+import com.cleaning.freshup.domain.penalty.dto.PenaltyAddRequestDto;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyResponseDto;
 import com.cleaning.freshup.domain.penalty.service.PenaltyService;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,11 @@ public class PenaltyController {
     //
     // 역할:
     // 벌금 목록을 조회한다.
+    @PostMapping
+    public PenaltyResponseDto addPenalty(@RequestBody PenaltyAddRequestDto requestDto) {
+        return penaltyService.addPenalty(requestDto);
+    }
+
     @GetMapping
     public Page<PenaltyResponseDto> getPenalties(@RequestParam(required = false) List<Long> assignees,
             @RequestParam(required = false) String paymentStatus,

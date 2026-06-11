@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
 
+import com.cleaning.freshup.domain.penalty.dto.PenaltyAddRequestDto;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyApplyDto;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyRequestDto;
 import org.springframework.transaction.annotation.Transactional;
@@ -129,7 +130,17 @@ public class PenaltyService {
         // 예:
         // requestDto.getAdjustmentYn() 값이 "Y"이면
         // 해당 벌금은 정산 완료 상태로 변경된다.
-        penalty.updateAdjustmentYn(requestDto.getAdjustmentYn());
+        // requestDto.getAmount()의 값이 null이라면 0으로 추가하고, 존재하면 requestDto.getAmount()로
+        // 넣는다.
+        if (requestDto.getAmount() != null) {
+            penalty.updateAmount(requestDto.getAmount());
+        } else {
+            penalty.updateAmount(penalty.getAmount());
+        }
+
+        if (requestDto.getAdjustmentYn() != null) {
+            penalty.updateAdjustmentYn(requestDto.getAdjustmentYn());
+        }
 
         // 수정된 Penalty Entity를 응답용 DTO로 변환해서 반환한다.
         //
@@ -208,10 +219,22 @@ public class PenaltyService {
         penaltyRepository.save(penalty);
     }
 
+    @Transactional
+    public PenaltyResponseDto addPenalty(PenaltyAddRequestDto requestDto) {
+        User user = userRepository.findById(requestDto.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        Penalty penalty = new Penalty(user, requestDto.getAmount(), "N", LocalDate.now(), LocalDate.now());
+        penaltyRepository.save(penalty);
+
+        updateUserStats(user.getId(), BigDecimal.valueOf(requestDto.getAmount()));
+
+        return PenaltyResponseDto.from(penalty);
+    }
+
     /** TB_USER_STATS 의 총벌금금액(TOTAL_PENALTY_AMOUNT) 누적 업데이트 */
     private void updateUserStats(Long userSeq, BigDecimal addedAmount) {
-        // 만약 TB_USER_STATS에 해당 회원의 정보가 없다면 UserStats 엔티티를 새로 만든다.
-        UserStats stats = userStatsRepository.findById(userSeq)
+        UserStats stats = userStatsRepository.findByUserSeq(userSeq)
                 .orElseGet(() -> {
                     UserStats newStats = UserStats.builder()
                             .userSeq(userSeq)
@@ -228,7 +251,12 @@ public class PenaltyService {
     }
 
     // 벌금 정보를 삭제하는 메서드
+    @Transactional
     public void deletePenalty(Long penaltyId) {
+        // 벌금 삭제 시 tb_user_stats 테이블 내용도 업데이트 해줘야 함
+        Penalty penalty = penaltyRepository.findById(penaltyId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 벌금 정보입니다."));
+        updateUserStats(penalty.getUser().getId(), BigDecimal.valueOf(-penalty.getAmount()));
         penaltyRepository.deleteById(penaltyId);
     }
 }

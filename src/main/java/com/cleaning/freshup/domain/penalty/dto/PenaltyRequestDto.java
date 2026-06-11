@@ -38,6 +38,7 @@ public class PenaltyRequestDto {
 
     private List<Long> assignees; // 담당자 ID 목록
     private String paymentStatus; // 수납 여부 (ALL, Y, N)
+    private Integer amount;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate startDate; // 시작 날짜
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

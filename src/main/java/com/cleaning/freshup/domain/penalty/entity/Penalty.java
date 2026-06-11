@@ -1,5 +1,6 @@
 package com.cleaning.freshup.domain.penalty.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.cleaning.freshup.domain.user.entity.User;
@@ -109,6 +110,10 @@ public class Penalty {
     // → 해당 벌금을 정산 완료 상태로 변경
     public void updateAdjustmentYn(String adjustmentYn) {
         this.adjustmentYn = adjustmentYn;
+    }
+
+    public void updateAmount(Integer amount) {
+        this.amount = amount;
     }
 
     public Penalty(User user, Integer amount, String adjustmentYn, LocalDate createdDate, LocalDate updatedDate) {
