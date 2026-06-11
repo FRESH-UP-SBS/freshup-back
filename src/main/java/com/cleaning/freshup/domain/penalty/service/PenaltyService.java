@@ -3,11 +3,31 @@ package com.cleaning.freshup.domain.penalty.service;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyResponseDto;
 import com.cleaning.freshup.domain.penalty.entity.Penalty;
 import com.cleaning.freshup.domain.penalty.repository.PenaltyRepository;
+import com.cleaning.freshup.domain.schedule.repository.ScheduleRepository;
+import com.cleaning.freshup.domain.user.entity.User;
+import com.cleaning.freshup.domain.user.repository.UserRepository;
+import com.cleaning.freshup.domain.userstats.entity.UserStats;
+import com.cleaning.freshup.domain.userstats.repository.UserStatsRepository;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
+
+import com.cleaning.freshup.domain.penalty.dto.PenaltyAddRequestDto;
+import com.cleaning.freshup.domain.penalty.dto.PenaltyApplyDto;
 import com.cleaning.freshup.domain.penalty.dto.PenaltyRequestDto;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 // 이 클래스가 Service 역할을 하는 클래스라는 뜻이다.
@@ -19,6 +39,7 @@ import java.util.List;
 // Controller → 요청 받기
 // Service → 실제 로직 처리
 // Repository → DB 접근
+@Slf4j
 @Service
 
 // Lombok 어노테이션
@@ -36,34 +57,39 @@ public class PenaltyService {
     // Repository를 통해 DB 작업을 요청한다.
     private final PenaltyRepository penaltyRepository;
 
+    private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final UserStatsRepository userStatsRepository;
+
+    /** 주당 청소 최소 완료 횟수 */
+    private static final int REQUIRED_CLEAN_COUNT_PER_WEEK = 2;
+
+    /** 1회 미이행 시 부과 벌금액 (원) */
+    @Value("${freshup.penalty.amount-per-miss:3000}")
+    private static BigDecimal penaltyAmountPerMiss = BigDecimal.valueOf(3000);
+
+    /**
+     * 전 주(월~일) 청소 횟수가 2회 미만인 회원에게 벌금을 부과합니다.
+     * - 스케줄러에서 매주 월요일 06:00에 호출됩니다.
+     */
+
     // 벌금 목록을 조회하는 메서드이다.
     //
     // Controller에서 GET /api/penalties 요청이 들어오면
     // 이 메서드가 호출된다.
-    public List<PenaltyResponseDto> getPenalties() {
+    public Page<PenaltyResponseDto> getPenalties(List<Long> assignees, String paymentStatus, String startDate,
+            String endDate,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
 
         // penaltyRepository.findAllWithUser()
         // → DB에서 모든 벌금 정보를 조회한다.
         // → 이때 벌금과 연결된 사용자 정보도 함께 조회한다.
-        return penaltyRepository.findAllWithUser()
-
-                // 조회된 List<Penalty>를 Stream으로 변환한다.
-                //
-                // Stream을 사용하면 리스트의 각 요소를
-                // 하나씩 변환하거나 필터링할 수 있다.
-                .stream()
-
-                // Penalty Entity를 PenaltyResponseDto로 변환한다.
-                //
-                // PenaltyResponseDto::from 은 아래 코드와 같은 의미이다.
-                // penalty -> PenaltyResponseDto.from(penalty)
-                //
-                // Entity를 그대로 클라이언트에게 보내지 않고,
-                // 응답용 DTO로 바꿔서 보내기 위한 과정이다.
-                .map(PenaltyResponseDto::from)
-
-                // 변환된 PenaltyResponseDto들을 다시 List로 만든다.
-                .toList();
+        return penaltyRepository.findAllWithFilter(
+                assignees,
+                paymentStatus,
+                startDate != null ? LocalDate.parse(startDate) : null,
+                endDate != null ? LocalDate.parse(endDate) : null,
+                pageable).map(PenaltyResponseDto::from);
     }
 
     // 벌금 정보를 수정하는 메서드이다.
@@ -104,7 +130,17 @@ public class PenaltyService {
         // 예:
         // requestDto.getAdjustmentYn() 값이 "Y"이면
         // 해당 벌금은 정산 완료 상태로 변경된다.
-        penalty.updateAdjustmentYn(requestDto.getAdjustmentYn());
+        // requestDto.getAmount()의 값이 null이라면 0으로 추가하고, 존재하면 requestDto.getAmount()로
+        // 넣는다.
+        if (requestDto.getAmount() != null) {
+            penalty.updateAmount(requestDto.getAmount());
+        } else {
+            penalty.updateAmount(penalty.getAmount());
+        }
+
+        if (requestDto.getAdjustmentYn() != null) {
+            penalty.updateAdjustmentYn(requestDto.getAdjustmentYn());
+        }
 
         // 수정된 Penalty Entity를 응답용 DTO로 변환해서 반환한다.
         //
@@ -114,5 +150,113 @@ public class PenaltyService {
         // 즉, 여기서는 penaltyRepository.save(penalty)를 직접 호출하지 않아도
         // 트랜잭션이 끝날 때 수정 내용이 저장될 수 있다.
         return PenaltyResponseDto.from(penalty);
+    }
+
+    /**
+     * 전 주(월~일) 청소 횟수가 2회 미만인 회원에게 벌금을 부과합니다.
+     * - 스케줄러에서 매주 월요일 06:00에 호출됩니다.
+     */
+    @Transactional
+    public void applyPenaltyForInsufficientCleaning() {
+        // ① 전 주 기간 계산 (월요일 00:00 ~ 일요일 23:59:59)
+        LocalDate today = LocalDate.now(); // 현재 월요일
+        LocalDate lastMonday = today.minusWeeks(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate lastSunday = lastMonday.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+        // 변경 후
+        LocalDate weekStart = lastMonday;
+        LocalDate weekEnd = lastSunday;
+
+        log.info("[PenaltyService] 검사 기간: {} ~ {}", weekStart, weekEnd);
+
+        // ② 전체 활성 회원 조회
+        List<User> allUsers = userRepository.findAll();
+        log.info("[PenaltyService] 대상 회원 수: {}", allUsers.size());
+
+        int penaltyCount = 0;
+
+        for (User user : allUsers) {
+            // ③ 해당 주에 완료한 청소 일정 횟수 조회
+            int completedCount = scheduleRepository.countCompletedScheduleByUserAndPeriod(
+                    user.getId(), weekStart, weekEnd);
+
+            int missCount = REQUIRED_CLEAN_COUNT_PER_WEEK - completedCount;
+
+            if (missCount <= 0) {
+                log.debug("[PenaltyService] 회원 {} - 청소 완료({}/{}), 벌금 없음",
+                        user.getId(), completedCount, REQUIRED_CLEAN_COUNT_PER_WEEK);
+                continue;
+            }
+
+            // ④ 벌금 부과
+            BigDecimal totalPenalty = penaltyAmountPerMiss.multiply(BigDecimal.valueOf(missCount));
+
+            PenaltyApplyDto applyDto = PenaltyApplyDto.builder()
+                    .userSeq(user.getId())
+                    .amount(totalPenalty)
+                    .weekStart(weekStart)
+                    .weekEnd(weekEnd)
+                    .completedCount(completedCount)
+                    .missCount(missCount)
+                    .build();
+
+            savePenalty(applyDto, user);
+            updateUserStats(user.getId(), totalPenalty);
+            penaltyCount++;
+
+            log.info("[PenaltyService] 벌금 부과 - 회원 seq={}, 청소 완료 {}/{}회, 미이행 {}회, 벌금 {}원",
+                    user.getId(), completedCount, REQUIRED_CLEAN_COUNT_PER_WEEK,
+                    missCount, totalPenalty);
+        }
+
+        log.info("[PenaltyService] 벌금 처리 완료 - 총 {}명 부과", penaltyCount);
+    }
+
+    /** TB_PENALTY 에 벌금 레코드 저장 */
+    private void savePenalty(PenaltyApplyDto dto, User user) {
+        Penalty penalty = new Penalty(user, dto.getAmount().intValue(), "N", LocalDate.now(), LocalDate.now());
+
+        penaltyRepository.save(penalty);
+    }
+
+    @Transactional
+    public PenaltyResponseDto addPenalty(PenaltyAddRequestDto requestDto) {
+        User user = userRepository.findById(requestDto.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        Penalty penalty = new Penalty(user, requestDto.getAmount(), "N", LocalDate.now(), LocalDate.now());
+        penaltyRepository.save(penalty);
+
+        updateUserStats(user.getId(), BigDecimal.valueOf(requestDto.getAmount()));
+
+        return PenaltyResponseDto.from(penalty);
+    }
+
+    /** TB_USER_STATS 의 총벌금금액(TOTAL_PENALTY_AMOUNT) 누적 업데이트 */
+    private void updateUserStats(Long userSeq, BigDecimal addedAmount) {
+        UserStats stats = userStatsRepository.findByUserSeq(userSeq)
+                .orElseGet(() -> {
+                    UserStats newStats = UserStats.builder()
+                            .userSeq(userSeq)
+                            .remainingCleanCount(0)
+                            .totalPenaltyAmount(BigDecimal.ZERO)
+                            .createdDate(LocalDateTime.now())
+                            .updatedDate(LocalDateTime.now())
+                            .build();
+                    return userStatsRepository.save(newStats);
+                });
+
+        stats.addPenaltyAmount(addedAmount);
+        userStatsRepository.save(stats);
+    }
+
+    // 벌금 정보를 삭제하는 메서드
+    @Transactional
+    public void deletePenalty(Long penaltyId) {
+        // 벌금 삭제 시 tb_user_stats 테이블 내용도 업데이트 해줘야 함
+        Penalty penalty = penaltyRepository.findById(penaltyId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 벌금 정보입니다."));
+        updateUserStats(penalty.getUser().getId(), BigDecimal.valueOf(-penalty.getAmount()));
+        penaltyRepository.deleteById(penaltyId);
     }
 }

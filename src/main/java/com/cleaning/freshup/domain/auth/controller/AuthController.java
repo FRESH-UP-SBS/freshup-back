@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.cleaning.freshup.auth.jwt.JwtTokenProvider;
-import com.cleaning.freshup.domain.user.entity.SocialAccount;
 import com.cleaning.freshup.domain.user.entity.User;
-import com.cleaning.freshup.domain.user.repository.SocialAccountRepository;
 import com.cleaning.freshup.domain.user.repository.UserRepository;
 
 import jakarta.servlet.http.Cookie;

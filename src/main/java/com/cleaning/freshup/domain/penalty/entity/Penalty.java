@@ -1,5 +1,8 @@
 package com.cleaning.freshup.domain.penalty.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import com.cleaning.freshup.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,13 +16,10 @@ import lombok.NoArgsConstructor;
 // 모든 필드의 getter 메서드를 자동으로 만들어준다.
 // 예: getId(), getUser(), getAmount(), getAdjustmentYn()
 @Getter
-
 // Lombok 어노테이션
 // 기본 생성자를 자동으로 만들어준다.
 // JPA Entity는 기본 생성자가 필요하다.
 @NoArgsConstructor
-
-// 이 Entity가 DB의 TB_PENALTY 테이블과 연결된다는 뜻이다.
 @Table(name = "TB_PENALTY")
 public class Penalty {
 
@@ -34,6 +34,22 @@ public class Penalty {
     // id 값이 자동 생성되도록 설정되어 있지 않다.
     // 즉, 이 Entity를 저장할 때는 id 값이 이미 정해져 있거나,
     // 다른 방식으로 관리되고 있을 가능성이 있다.
+    // seq를 자동생성하는 로직을 작성해야 한다.
+    // 기본키 값을 자동으로 생성한다.
+    // 여기서는 Oracle Sequence를 사용해서 id 값을 만든다.
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "penalty_seq")
+
+    // 사용할 시퀀스 정보를 설정한다.
+    //
+    // name:
+    // Java 코드에서 사용할 시퀀스 generator 이름
+    //
+    // sequenceName:
+    // DB에 실제로 존재하는 시퀀스 이름
+    //
+    // allocationSize:
+    // 시퀀스 값을 1씩 증가시킨다는 의미이다.
+    @SequenceGenerator(name = "penalty_seq", sequenceName = "SEQ_PENALTY", allocationSize = 1)
     @Column(name = "PENALTY_SEQ")
     private Long id;
 
@@ -76,6 +92,14 @@ public class Penalty {
     @Column(name = "ADJUSTMENT_YN", nullable = false)
     private String adjustmentYn;
 
+    @Column(name = "CREATED_DATE", nullable = false, columnDefinition = "DATE DEFAULT SYSDATE")
+    private LocalDate createdDate;
+
+    @Column(name = "UPDATED_DATE", nullable = true)
+    private LocalDate updatedDate;
+
+    // 벌금 정보를 생성할 때 사용하는 생성자이다.
+
     // 벌금의 정산 여부 값을 수정하는 메서드이다.
     //
     // Entity의 필드를 직접 변경하지 않고,
@@ -86,5 +110,17 @@ public class Penalty {
     // → 해당 벌금을 정산 완료 상태로 변경
     public void updateAdjustmentYn(String adjustmentYn) {
         this.adjustmentYn = adjustmentYn;
+    }
+
+    public void updateAmount(Integer amount) {
+        this.amount = amount;
+    }
+
+    public Penalty(User user, Integer amount, String adjustmentYn, LocalDate createdDate, LocalDate updatedDate) {
+        this.user = user;
+        this.amount = amount;
+        this.adjustmentYn = adjustmentYn;
+        this.createdDate = createdDate;
+        this.updatedDate = updatedDate;
     }
 }

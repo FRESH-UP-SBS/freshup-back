@@ -29,6 +29,7 @@ public class UserController {
     @GetMapping("/me")
     public CurrentUserResponseDto getCurrentUser(@AuthenticationPrincipal String email) {
         // @AuthenticationPrincipal로 이메일을 바로 받아오면 코드가 더 깔끔해집니다.
+        System.out.println("Authenticated user's email >>>>>>>>  " + email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 없음"));
 

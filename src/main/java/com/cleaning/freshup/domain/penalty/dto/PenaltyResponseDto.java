@@ -16,9 +16,9 @@ import lombok.Getter;
 //
 // 예:
 // PenaltyResponseDto.builder()
-//      .id(1L)
-//      .name("홍길동")
-//      .build();
+// .id(1L)
+// .name("홍길동")
+// .build();
 @Builder
 public class PenaltyResponseDto {
 
